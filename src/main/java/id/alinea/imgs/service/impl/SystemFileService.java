@@ -3,6 +3,7 @@ package id.alinea.imgs.service.impl;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -36,34 +37,51 @@ public class SystemFileService extends BaseService implements ISystemFileService
 			final Result result = imageKitService.upload(file, filename, file.getContentType(), tags);
 
 			if (result != null && result.isSuccessful()) {
-				SystemFile sysFile = new SystemFile();
-				sysFile.setFileName(filename);
-				sysFile.setEntityId(entityId);
-				sysFile.setEntityType(entityName);
-				sysFile.setEntityField(entityField);
-				sysFile.setCreatedBy(StringUtils.isNotBlank(createdBy) ? createdBy : Constant.DEFAULT_USER);
-				sysFile.setCreatedDate(new Date());
-				sysFile.setVersion(0L);
-				sysFile.setFileType(file.getContentType());
-				sysFile.setFileUuid(result.getFileId());
-
-				sysFile.setFilePath(result.getFilePath());
-				sysFile.setTags(gson.toJson(result.getTags()));
-				sysFile.setUrl(result.getUrl());
-
-				final JsonObject jsonObject = gson.fromJson(result.getRaw(), JsonObject.class);
-				if (jsonObject != null && jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
-					final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
-					sysFile.setThumbnailUrl(thumbnailUrl);
+				String fileId = result.getFileId();
+				final Map<String, Object> mapResult = result.getMap();
+				
+				if(fileId == null && mapResult != null) {
+					fileId = String.class.cast(mapResult.get(Constant.FIELD_FILE_ID));
+					logger.info("repopulate from raw response and got {} ", fileId);
 				}
-				sysFile.setImagekitRawResponse(result.getRaw());
+				
+				if(fileId != null) {
+					SystemFile sysFile = new SystemFile();
+					sysFile.setFileName(filename);
+					sysFile.setEntityId(entityId);
+					sysFile.setEntityType(entityName);
+					sysFile.setEntityField(entityField);
+					sysFile.setCreatedBy(StringUtils.isNotBlank(createdBy) ? createdBy : Constant.DEFAULT_USER);
+					sysFile.setCreatedDate(new Date());
+					sysFile.setVersion(0L);
+					sysFile.setFileType(file.getContentType());
+					sysFile.setFileUuid(fileId);
 
-				logger.info("data to be save {}", sysFile);
+					sysFile.setFilePath(result.getFilePath());
+					sysFile.setTags(gson.toJson(result.getTags()));
+					sysFile.setUrl(result.getUrl());
 
-				systemFileRepository.persist(sysFile);
+					final JsonObject jsonObject = gson.fromJson(result.getRaw(), JsonObject.class);
+					if (jsonObject != null && jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
+						final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
+						sysFile.setThumbnailUrl(thumbnailUrl);
+					}
+					sysFile.setImagekitRawResponse(result.getRaw());
 
-				logger.info("File meta {} stored to DB with id {}", file.getFileName(), sysFile.getId());
-				logger.info("File {} stored to disk with path ", result.getRaw());
+					logger.info("data to be save {}", sysFile);
+
+					try {
+						systemFileRepository.persist(sysFile);
+						logger.info("File meta {} stored to DB with id {}", file.getFileName(), sysFile.getId());
+						logger.info("File {} stored to disk with path ", result.getRaw());
+					}catch (Exception e) {
+						// ROLLBACK UPLOADED IMAGES
+						imageKitService.delete(fileId);
+						logger.info("rollback upload for  {}", fileId);
+					}
+				} else {
+					logger.info("unable to fetch file Id {} ", fileId);
+				}
 			} else {
 				logger.info("unable to upload {} ", result.getRaw());
 			}

@@ -47,7 +47,7 @@ public class FileUploadController extends BaseController {
 	@RolesAllowed("/user")
 	@GetMapping("/test")
 	public @ResponseBody ResponseEntity<String> defaultPage(){
-		String msg = "Woy!";
+		final String msg = "Woy!";
 		logger.info("------------------------------token {} ", jwt.getSubject());
 		logger.info("------------------------------indentity {} ", identity);
 		return ResponseEntity.ok(gson.toJson(new ResponseMessage(HttpStatus.SC_OK, msg)));
