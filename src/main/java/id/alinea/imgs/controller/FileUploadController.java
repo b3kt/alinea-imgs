@@ -89,6 +89,7 @@ public class FileUploadController extends BaseController {
 						createdBy);
 			}catch(Exception ex) {
 				msg = ex.getMessage();
+				ex.printStackTrace();
 			}
 		} else {
 			msg = "Unable to upload file !"; 

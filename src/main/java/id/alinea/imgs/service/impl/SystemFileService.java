@@ -11,6 +11,7 @@ import javax.transaction.Transactional;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import id.alinea.imgs.config.Constant;
@@ -58,30 +59,34 @@ public class SystemFileService extends BaseService implements ISystemFileService
 					sysFile.setFileUuid(fileId);
 
 					final String raw = result.getRaw();
-					final JsonObject jsonObject = gson.fromJson(raw, JsonObject.class);
-					if (jsonObject != null) {
-						if(jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
-							final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
-							sysFile.setThumbnailUrl(thumbnailUrl);
+					if(StringUtils.isNotBlank(raw)) {
+						final JsonObject jsonObject = gson.fromJson(raw, JsonObject.class);
+						if (jsonObject != null) {
+							if(jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
+								final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
+								sysFile.setThumbnailUrl(thumbnailUrl);
+							}
+							
+							if(jsonObject.has(Constant.FIELD_FILE_PATH)) {
+								final String fieldPath = jsonObject.get(Constant.FIELD_FILE_PATH).getAsString();
+								sysFile.setFilePath(fieldPath);
+							}
+
+							if(jsonObject.has(Constant.FIELD_TAGS)) {
+								final JsonElement tmptags = jsonObject.get(Constant.FIELD_TAGS);
+								if(tmptags != null) {									
+									sysFile.setTags(gson.toJson(tmptags));
+								}
+							}
+
+							if(jsonObject.has(Constant.FIELD_URL)) {
+								final String url = jsonObject.get(Constant.FIELD_URL).getAsString();
+								sysFile.setUrl(url);
+							}
 						}
 						
-						if(jsonObject.has(Constant.FIELD_FILE_PATH)) {
-							final String fieldPath = jsonObject.get(Constant.FIELD_FILE_PATH).getAsString();
-							sysFile.setFilePath(fieldPath);
-						}
-
-						if(jsonObject.has(Constant.FIELD_TAGS)) {
-							final String tmptags = jsonObject.get(Constant.FIELD_TAGS).getAsString();
-							sysFile.setTags(tmptags);
-						}
-
-						if(jsonObject.has(Constant.FIELD_URL)) {
-							final String url = jsonObject.get(Constant.FIELD_URL).getAsString();
-							sysFile.setUrl(url);
-						}
+						sysFile.setImagekitRawResponse(raw);
 					}
-					
-					sysFile.setImagekitRawResponse(raw);
 
 					logger.info("data to be save {}", sysFile);
 
@@ -93,6 +98,8 @@ public class SystemFileService extends BaseService implements ISystemFileService
 						// ROLLBACK UPLOADED IMAGES
 						imageKitService.delete(fileId);
 						logger.info("rollback upload for  {}", fileId);
+						
+						throw e;
 					}
 				} else {
 					logger.info("unable to fetch file Id {} ", fileId);
