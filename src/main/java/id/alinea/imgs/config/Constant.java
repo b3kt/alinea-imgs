@@ -16,6 +16,8 @@ public class Constant {
 	public static final String FIELD_FIELD = "field";
 
 	public static final String FIELD_FILE_ID = "fileId";
+	public static final String FIELD_FILE_PATH = "filePath";
+	public static final String FIELD_URL = "url";
 
 	private Constant() {
 	}

@@ -57,23 +57,38 @@ public class SystemFileService extends BaseService implements ISystemFileService
 					sysFile.setFileType(file.getContentType());
 					sysFile.setFileUuid(fileId);
 
-					sysFile.setFilePath(result.getFilePath());
-					sysFile.setTags(gson.toJson(result.getTags()));
-					sysFile.setUrl(result.getUrl());
+					final String raw = result.getRaw();
+					final JsonObject jsonObject = gson.fromJson(raw, JsonObject.class);
+					if (jsonObject != null) {
+						if(jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
+							final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
+							sysFile.setThumbnailUrl(thumbnailUrl);
+						}
+						
+						if(jsonObject.has(Constant.FIELD_FILE_PATH)) {
+							final String fieldPath = jsonObject.get(Constant.FIELD_FILE_PATH).getAsString();
+							sysFile.setFilePath(fieldPath);
+						}
 
-					final JsonObject jsonObject = gson.fromJson(result.getRaw(), JsonObject.class);
-					if (jsonObject != null && jsonObject.has(Constant.FIELD_THUMBNAIL_URL)) {
-						final String thumbnailUrl = jsonObject.get(Constant.FIELD_THUMBNAIL_URL).getAsString();
-						sysFile.setThumbnailUrl(thumbnailUrl);
+						if(jsonObject.has(Constant.FIELD_TAGS)) {
+							final String tmptags = jsonObject.get(Constant.FIELD_TAGS).getAsString();
+							sysFile.setTags(tmptags);
+						}
+
+						if(jsonObject.has(Constant.FIELD_URL)) {
+							final String url = jsonObject.get(Constant.FIELD_URL).getAsString();
+							sysFile.setUrl(url);
+						}
 					}
-					sysFile.setImagekitRawResponse(result.getRaw());
+					
+					sysFile.setImagekitRawResponse(raw);
 
 					logger.info("data to be save {}", sysFile);
 
 					try {
 						systemFileRepository.persist(sysFile);
-						logger.info("File meta {} stored to DB with id {}", file.getFileName(), sysFile.getId());
-						logger.info("File {} stored to disk with path ", result.getRaw());
+						logger.info("File meta {} stored to DB with id {}", filename, sysFile.getId());
+						logger.info("File {} stored to disk with path ", raw);
 					}catch (Exception e) {
 						// ROLLBACK UPLOADED IMAGES
 						imageKitService.delete(fileId);
