@@ -115,6 +115,9 @@ public class FileUploadController extends BaseController {
 				&& multipartParams.containsKey(Constant.FIELD_NAME) 
 				&& multipartParams.containsKey(Constant.FIELD_FIELD);
 		final boolean hasFile = !CollectionUtils.isEmpty(files); 
+		
+		logger.info("hasAuthz {}, hasData {}, hasFile {}", hasAuthz, multipartParams, hasFile);
+	
 		return hasAuthz && hasData && hasFile;
 	}
 
@@ -140,15 +143,14 @@ public class FileUploadController extends BaseController {
 			partHandler = new PartHandler() {
 				@Override
 				public void handleFormItem(String name, String value) {
+					logger.info(" handleFormItem {}={}", name, value);					
 					multipartParams.put(name, value);
 				}
 	
 				@Override
 				public void handleFileItem(String name, FileItem fileItem) {
-					logger.info("{}", fileItem.getFile());
-					
-					files.add(fileItem);
-					
+					logger.info(" handleFileItem {}", fileItem.getFile());					
+					files.add(fileItem);					
 				}
 			};
 		}	
