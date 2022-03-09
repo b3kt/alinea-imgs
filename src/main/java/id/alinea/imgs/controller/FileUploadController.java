@@ -44,7 +44,7 @@ public class FileUploadController extends BaseController {
 
 	private PartHandler partHandler;
 
-	@RolesAllowed("/user")
+	@RolesAllowed({"/user","/admin"})
 	@GetMapping("/test")
 	public @ResponseBody ResponseEntity<String> defaultPage(){
 		final String msg = "Woy!";
@@ -53,7 +53,7 @@ public class FileUploadController extends BaseController {
 		return ResponseEntity.ok(gson.toJson(new ResponseMessage(HttpStatus.SC_OK, msg)));
 	}
 
-	@RolesAllowed("/user")
+	@RolesAllowed({"/user","/admin"})
 	@DeleteMapping("/delete/{uuid}")
 	public @ResponseBody ResponseEntity<String> deleteFile(@PathVariable(value = Constant.FIELD_UUID) String uuid) throws IOException {
 		String msg = null;
@@ -68,7 +68,7 @@ public class FileUploadController extends BaseController {
 		return ResponseEntity.ok(gson.toJson(new ResponseMessage(HttpStatus.SC_OK, msg)));
 	}
 
-	@RolesAllowed("/user")
+	@RolesAllowed({"/user","/admin"})
 	@PostMapping("/upload")
 	public @ResponseBody ResponseEntity<String> handleFileUpload() {
 		initRequest();
